@@ -64,11 +64,22 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
-            ./gradlew assembleRelease --no-daemon
+          TASK=assembleDebug; [ -n "$ANDROID_KEYSTORE_PATH" ] && TASK=assembleRelease
+          set +e
+          ./gradlew $TASK --no-daemon --stacktrace > "$RUNNER_TEMP/gradle.log" 2>&1
+          RC=$?
+          set -e
+          tail -n 200 "$RUNNER_TEMP/gradle.log"
+          if [ $RC -ne 0 ]; then
+            # Fehlerursache als Hinweis am Lauf sichtbar machen
+            MSG=$(grep -A 12 "What went wrong" "$RUNNER_TEMP/gradle.log" | head -n 30 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            [ -z "$MSG" ] && MSG=$(grep -iE "error|exception" "$RUNNER_TEMP/gradle.log" | head -n 20 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=Gradle::$MSG"
+            exit $RC
+          fi
+          if [ "$TASK" = assembleRelease ]; then
             cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Sudoku-Schule-1.0.${BUILD_NUMBER}.apk"
           else
-            ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/Sudoku-Schule-1.0.${BUILD_NUMBER}-debug.apk"
           fi
       - uses: actions/upload-artifact@v4
