@@ -1,7 +1,7 @@
 [package]
-name = "sudoku-schule"
+name = "master-sudoku"
 version = "1.0.0"
-description = "Sudoku-Schule"
+description = "Master Sudoku"
 authors = ["PlashaWasTaken"]
 license = ""
 repository = ""

@@ -1,4 +1,4 @@
-# Sudoku-Schule
+# Master Sudoku
 
 Sudoku lernen und spielen: zehn Schwierigkeitsstufen, 24 Lösungstechniken mit Erklärung,
 Beispielbild und endlosen Übungen, Punktesystem, Färbe-Werkzeug und eigene Farben.

@@ -78,14 +78,14 @@ jobs:
             exit $RC
           fi
           if [ "$TASK" = assembleRelease ]; then
-            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Sudoku-Schule-1.0.${BUILD_NUMBER}.apk"
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/master-sudoku-1.0.${BUILD_NUMBER}.apk"
           else
-            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/Sudoku-Schule-1.0.${BUILD_NUMBER}-debug.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/master-sudoku-1.0.${BUILD_NUMBER}-debug.apk"
           fi
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: ${{ runner.temp }}/Sudoku-Schule-*.apk
+          path: ${{ runner.temp }}/master-sudoku-*.apk
           if-no-files-found: error
 
   windows:
@@ -116,8 +116,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force out | Out-Null
-          Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | ForEach-Object { Copy-Item $_ "out/Sudoku-Schule-1.0.$env:BUILD_NUMBER-Setup.exe" }
-          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi | ForEach-Object { Copy-Item $_ "out/Sudoku-Schule-1.0.$env:BUILD_NUMBER.msi" }
+          Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | ForEach-Object { Copy-Item $_ "out/master-sudoku-1.0.$env:BUILD_NUMBER-setup.exe" }
+          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi | ForEach-Object { Copy-Item $_ "out/master-sudoku-1.0.$env:BUILD_NUMBER.msi" }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -136,9 +136,9 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Sudoku-Schule 1.0.${{ github.run_number }}
+          name: Master Sudoku 1.0.${{ github.run_number }}
           body: |
             Automatisch gebaut aus ${{ github.sha }}.
             Android: die .apk-Datei auf dem Handy oder Tablet herunterladen und öffnen.
-            Windows: die Setup.exe herunterladen und ausführen.
+            Windows: die setup.exe herunterladen und ausführen.
           files: files/*

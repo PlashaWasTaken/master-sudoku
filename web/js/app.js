@@ -635,7 +635,7 @@
     const item = (nav, title, sub, primary) => `<button class="mbtn${primary ? ' primary' : ''}" data-nav="${nav}"><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span><span class="chev">${ICON.chev}</span></button>`;
     $('app').className = 'app';
     $('app').innerHTML = `<div class="menu">
-      <div class="logo"><div class="logo-grid" aria-hidden="true">${logo}</div><h1>Sudoku-Schule</h1><p>${pts(A.total || 0)} Punkte</p></div>
+      <div class="logo"><div class="logo-grid" aria-hidden="true">${logo}</div><h1>Master Sudoku</h1><p>${pts(A.total || 0)} Punkte</p></div>
       <nav class="mlist">
         ${cont ? item('continue', 'Weiterspielen', cont, true) : ''}
         ${item('level', 'Neues Spiel', 'Zehn Stufen vom Einsteiger bis zum Großmeister', !cont)}

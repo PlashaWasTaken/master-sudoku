@@ -166,7 +166,7 @@ function tauriGoogleIdToken() {
       });
       port = await oauthStart({
         ports: [OAUTH_PORT],
-        response: '<html><head><meta charset="utf-8"><title>Sudoku-Schule</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px">Anmeldung abgeschlossen. Du kannst dieses Fenster schließen und zur Sudoku-Schule zurückkehren.</body></html>'
+        response: '<html><head><meta charset="utf-8"><title>Master Sudoku</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px">Anmeldung abgeschlossen. Du kannst dieses Fenster schließen und zu Master Sudoku zurückkehren.</body></html>'
       });
       const q = new URLSearchParams({
         client_id: clientId, redirect_uri: `http://localhost:${OAUTH_PORT}`, response_type: 'id_token',

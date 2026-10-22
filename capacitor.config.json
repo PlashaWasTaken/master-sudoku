@@ -1,6 +1,6 @@
 {
   "appId": "com.plashawastaken.mastersudoku",
-  "appName": "Sudoku-Schule",
+  "appName": "Master Sudoku",
   "webDir": "dist",
   "android": {
     "backgroundColor": "#F4F5F7"

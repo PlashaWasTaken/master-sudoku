@@ -1,4 +1,4 @@
-# Sudoku-Schule: Einrichtung
+# Master Sudoku: Einrichtung
 
 Die Apps werden bei jedem Hochladen auf `main` automatisch von GitHub gebaut
 (Reiter **Actions**). Die fertigen Dateien liegen danach unter **Releases**.
@@ -31,7 +31,7 @@ lassen sich Updates nur nach Deinstallation der App aufspielen.
 ## Schritt 2: Firebase-Projekt anlegen (10 Minuten)
 
 1. Öffne <https://console.firebase.google.com> und melde dich mit deinem Google-Konto an.
-2. **Projekt erstellen** → Name `sudoku-schule` → Google Analytics **ausschalten** → Erstellen.
+2. **Projekt erstellen** → Name `master-sudoku` → Google Analytics **ausschalten** → Erstellen.
 
 ### Anmeldung einschalten
 3. Links **Build → Authentication → Jetzt starten**.
@@ -51,7 +51,7 @@ lassen sich Updates nur nach Deinstallation der App aufspielen.
 
 ### Web-App registrieren (für die Zugangsdaten)
 10. Oben links Zahnrad → **Projekteinstellungen** → unten **Meine Apps** → Symbol `</>` (Web).
-11. Name `Sudoku-Schule`, Hosting **nicht** anhaken → App registrieren.
+11. Name `master-sudoku`, Hosting **nicht** anhaken → App registrieren.
 12. Aus dem angezeigten `firebaseConfig` je ein Secret anlegen:
 
 | Secret | Feld in firebaseConfig |
@@ -84,10 +84,14 @@ lassen sich Updates nur nach Deinstallation der App aufspielen.
 Die Windows-App öffnet für die Google-Anmeldung deinen normalen Browser und empfängt
 die Antwort lokal. Diese Rücksprungadresse muss Google einmal erlaubt werden:
 
-1. Öffne <https://console.cloud.google.com/apis/credentials> und wähle oben das Projekt `sudoku-schule`.
-2. Unter **OAuth 2.0-Client-IDs** auf **Web client (auto created by Google Service)** klicken.
-3. Bei **Autorisierte Weiterleitungs-URIs** → **URI hinzufügen** → `http://localhost:53682`
-4. **Speichern.** Es kann ein paar Minuten dauern, bis das wirkt.
+1. Öffne <https://console.cloud.google.com/auth/clients>. Alternativ über das Menü ☰ links oben:
+   **Google Auth Platform → Clients**.
+2. Oben links neben dem Google-Cloud-Logo das Projekt **master-sudoku** auswählen.
+3. In der Liste **Clients** (früher „OAuth 2.0-Client-IDs“) auf
+   **Web client (auto created by Google Service)** klicken.
+   Ist die Liste leer, ist in Firebase der Anbieter Google noch nicht aktiviert (Schritt 2, Punkt 4).
+4. Bei **Autorisierte Weiterleitungs-URIs** → **URI hinzufügen** → `http://localhost:53682`
+5. **Speichern.** Es kann ein paar Minuten dauern, bis das wirkt.
 
 ---
 
@@ -97,7 +101,7 @@ die Antwort lokal. Diese Rücksprungadresse muss Google einmal erlaubt werden:
 2. Nach etwa 10 bis 15 Minuten unter **Releases** die neueste Version öffnen.
 3. **Android:** Die `.apk` auf dem Handy bzw. Tablet herunterladen und öffnen. Beim ersten Mal
    fragt Android, ob der Browser Apps installieren darf → **Einstellungen → Zulassen**.
-4. **Windows:** `Sudoku-Schule-…-Setup.exe` herunterladen und starten. Weil der Installer nicht
+4. **Windows:** `master-sudoku-…-setup.exe` herunterladen und starten. Weil der Installer nicht
    kostenpflichtig signiert ist, warnt Windows SmartScreen: **Weitere Informationen →
    Trotzdem ausführen.**
 

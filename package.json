@@ -2,7 +2,7 @@
   "name": "master-sudoku",
   "version": "1.0.0",
   "private": true,
-  "description": "Sudoku-Schule: Sudoku lernen mit 24 Techniken, als App für Android und Windows",
+  "description": "Master Sudoku: Sudoku lernen mit 24 Techniken, als App für Android und Windows",
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "cap:sync": "npm run build:web && npx cap sync android",
