@@ -1,0 +1,14 @@
+{
+  "appId": "com.plashawastaken.mastersudoku",
+  "appName": "Sudoku-Schule",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#F4F5F7"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Sudoku-Schule",
+  "version": "1.0.0",
+  "identifier": "com.plashawastaken.mastersudoku",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build:web"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sudoku-Schule",
+        "width": 1100,
+        "height": 860,
+        "minWidth": 420,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "Sudoku lernen mit 24 Techniken",
+    "windows": {
+      "nsis": {
+        "languages": [
+          "German"
+        ],
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "language": "de-DE"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.keystore
+*.jks
+keystore.properties
+android/app/google-services.json
+src-tauri/target/
+src-tauri/gen/
+.DS_Store
+firebase.local.json
