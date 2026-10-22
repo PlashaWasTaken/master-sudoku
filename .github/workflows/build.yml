@@ -1,8 +1,12 @@
 name: Apps bauen
 
-# Gebaut wird nur auf ausdrückliche Ansage: per Versionsmarke (z. B. v1.1.0) oder per "Run workflow" mit Versionsnummer.
+# Gebaut wird nur auf ausdrückliche Ansage:
+#  - Hochladen auf den Zweig "release" (Version aus package.json),
+#  - eine Versionsmarke wie v1.1.0,
+#  - oder "Run workflow" mit Versionsnummer.
 on:
   push:
+    branches: [release]
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -20,12 +24,14 @@ env:
   FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
   FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
   GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-  APP_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  APP_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || (github.ref_type == 'tag' && github.ref_name || '') }}
 
 jobs:
   android:
     name: Android-APK
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     env:
       GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -35,12 +41,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Versionsnummer bestimmen
+        id: ver
         run: |
           V="${APP_VERSION#v}"
+          [ -z "$V" ] && V=$(node -p "require('./package.json').version")
           echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Ungültige Versionsnummer: $V (erwartet z. B. 1.1.0)"; exit 1; }
           IFS=. read MA MI PA <<< "$V"
           echo "APP_VERSION=$V" >> "$GITHUB_ENV"
           echo "APP_VERSION_CODE=$((MA*10000 + MI*100 + PA))" >> "$GITHUB_ENV"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -118,7 +127,8 @@ jobs:
       - name: Versionsnummer setzen
         shell: pwsh
         run: |
-          $v = $env:APP_VERSION.TrimStart('v')
+          $v = "$env:APP_VERSION".TrimStart('v')
+          if (-not $v) { $v = (Get-Content package.json -Raw | ConvertFrom-Json).version }
           if ($v -notmatch '^\d+\.\d+\.\d+$') { Write-Error "Ungültige Versionsnummer: $v"; exit 1 }
           "APP_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           $f = 'src-tauri/tauri.conf.json'
@@ -148,8 +158,8 @@ jobs:
         with:
           path: files
           merge-multiple: true
-      - name: Versionsnummer bestimmen
-        run: echo "APP_VERSION=${APP_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Versionsnummer übernehmen
+        run: echo "APP_VERSION=${{ needs.android.outputs.version }}" >> "$GITHUB_ENV"
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.APP_VERSION }}

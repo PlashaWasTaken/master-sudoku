@@ -1,8 +1,8 @@
 # Master Sudoku: Einrichtung
 
 Die Apps werden nur auf ausdrückliche Ansage gebaut, nicht bei jedem Hochladen. Auslöser ist
-entweder eine Versionsmarke wie `v1.1.0` oder **Actions → Apps bauen → Run workflow** mit einer
-Versionsnummer. Die fertigen Dateien liegen danach unter **Releases**.
+entweder das Hochladen auf den Zweig `release` (Version aus `package.json`), eine Versionsmarke wie
+`v1.1.0` oder **Actions → Apps bauen → Run workflow** mit einer Versionsnummer. Die fertigen Dateien liegen danach unter **Releases**.
 
 Ohne die folgenden Schritte entstehen bereits funktionierende Apps, allerdings nur
 für das Offline-Spiel und mit einer Debug-APK. Für Synchronisation und saubere
