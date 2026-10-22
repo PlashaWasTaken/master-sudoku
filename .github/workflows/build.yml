@@ -1,9 +1,14 @@
 name: Apps bauen
 
+# Gebaut wird nur auf ausdrückliche Ansage: per Versionsmarke (z. B. v1.1.0) oder per "Run workflow" mit Versionsnummer.
 on:
   push:
-    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versionsnummer, z. B. 1.1.0'
+        required: true
 
 permissions:
   contents: write
@@ -15,7 +20,7 @@ env:
   FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
   FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
   GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-  BUILD_NUMBER: ${{ github.run_number }}
+  APP_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
 jobs:
   android:
@@ -29,6 +34,13 @@ jobs:
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Versionsnummer bestimmen
+        run: |
+          V="${APP_VERSION#v}"
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Ungültige Versionsnummer: $V (erwartet z. B. 1.1.0)"; exit 1; }
+          IFS=. read MA MI PA <<< "$V"
+          echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+          echo "APP_VERSION_CODE=$((MA*10000 + MI*100 + PA))" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -78,9 +90,9 @@ jobs:
             exit $RC
           fi
           if [ "$TASK" = assembleRelease ]; then
-            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/master-sudoku-1.0.${BUILD_NUMBER}.apk"
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/master-sudoku-${APP_VERSION}.apk"
           else
-            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/master-sudoku-1.0.${BUILD_NUMBER}-debug.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/master-sudoku-${APP_VERSION}-debug.apk"
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -106,9 +118,12 @@ jobs:
       - name: Versionsnummer setzen
         shell: pwsh
         run: |
+          $v = $env:APP_VERSION.TrimStart('v')
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { Write-Error "Ungültige Versionsnummer: $v"; exit 1 }
+          "APP_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           $f = 'src-tauri/tauri.conf.json'
           $c = Get-Content $f -Raw | ConvertFrom-Json
-          $c.version = "1.0.$env:BUILD_NUMBER"
+          $c.version = $v
           $c | ConvertTo-Json -Depth 20 | Set-Content $f -Encoding utf8
       - name: Windows-App bauen
         run: npx tauri build
@@ -116,8 +131,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force out | Out-Null
-          Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | ForEach-Object { Copy-Item $_ "out/master-sudoku-1.0.$env:BUILD_NUMBER-setup.exe" }
-          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi | ForEach-Object { Copy-Item $_ "out/master-sudoku-1.0.$env:BUILD_NUMBER.msi" }
+          Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | ForEach-Object { Copy-Item $_ "out/master-sudoku-$env:APP_VERSION-setup.exe" }
+          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi | ForEach-Object { Copy-Item $_ "out/master-sudoku-$env:APP_VERSION.msi" }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -133,12 +148,15 @@ jobs:
         with:
           path: files
           merge-multiple: true
+      - name: Versionsnummer bestimmen
+        run: echo "APP_VERSION=${APP_VERSION#v}" >> "$GITHUB_ENV"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Master Sudoku 1.0.${{ github.run_number }}
+          tag_name: v${{ env.APP_VERSION }}
+          target_commitish: ${{ github.sha }}
+          name: Master Sudoku ${{ env.APP_VERSION }}
           body: |
-            Automatisch gebaut aus ${{ github.sha }}.
+            Gebaut aus ${{ github.sha }}.
             Android: die .apk-Datei auf dem Handy oder Tablet herunterladen und öffnen.
             Windows: die setup.exe herunterladen und ausführen.
           files: files/*

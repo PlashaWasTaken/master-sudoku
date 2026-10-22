@@ -1,7 +1,8 @@
 # Master Sudoku: Einrichtung
 
-Die Apps werden bei jedem Hochladen auf `main` automatisch von GitHub gebaut
-(Reiter **Actions**). Die fertigen Dateien liegen danach unter **Releases**.
+Die Apps werden nur auf ausdrückliche Ansage gebaut, nicht bei jedem Hochladen. Auslöser ist
+entweder eine Versionsmarke wie `v1.1.0` oder **Actions → Apps bauen → Run workflow** mit einer
+Versionsnummer. Die fertigen Dateien liegen danach unter **Releases**.
 
 Ohne die folgenden Schritte entstehen bereits funktionierende Apps, allerdings nur
 für das Offline-Spiel und mit einer Debug-APK. Für Synchronisation und saubere
@@ -97,7 +98,7 @@ die Antwort lokal. Diese Rücksprungadresse muss Google einmal erlaubt werden:
 
 ## Schritt 4: Neu bauen und installieren
 
-1. Im Repository Reiter **Actions → Apps bauen → Run workflow**.
+1. Im Repository Reiter **Actions → Apps bauen → Run workflow**, Versionsnummer eingeben (z. B. `1.1.1`), starten.
 2. Nach etwa 10 bis 15 Minuten unter **Releases** die neueste Version öffnen.
 3. **Android:** Die `.apk` auf dem Handy bzw. Tablet herunterladen und öffnen. Beim ersten Mal
    fragt Android, ob der Browser Apps installieren darf → **Einstellungen → Zulassen**.
