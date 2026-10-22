@@ -238,7 +238,13 @@
     } else if (!ui.busy && !ui.picker && ['menu', 'level', 'training', 'detail', 'stats', 'options'].includes(ui.screen)) render();
   }
 
-  const ui = { genToken: 0, screen: 'menu', sel: -1, notesMode: false, colorMode: false, color: '#E5484D', addingColor: false, hint: null, busy: false, flash: -1, tech: null, showInfo: false, modal: null };
+  // Größe der Oberfläche: gilt nur für dieses Gerät
+  let scale = store.get('ss-scale') || 100;
+  function applyScale() { document.body.style.zoom = scale === 100 ? '' : String(scale / 100); }
+  function scaleSlider(id) {
+    return `<div class="scale"><label for="${id}">Größe</label><input type="range" id="${id}" min="80" max="150" step="5" value="${scale}" aria-label="Größe der Darstellung in Prozent"><output id="${id}-out">${scale} %</output></div>`;
+  }
+  const ui = { genToken: 0, hlMode: false, hl: new Set(), screen: 'menu', sel: -1, notesMode: false, colorMode: false, color: '#E5484D', addingColor: false, hint: null, busy: false, flash: -1, tech: null, showInfo: false, modal: null };
 
   // ================= Farben =================
   const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join(''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
@@ -273,7 +279,7 @@
       '--accent': acc, '--accent-ink': accInk,
       '--sel': mix(surface, acc, dark ? 0.44 : 0.32), '--peer': mix(surface, ink, dark ? 0.06 : 0.045), '--rowcol': mix(surface, acc, dark ? 0.1 : 0.065),
       '--same': mix(surface, acc, dark ? 0.24 : 0.17), '--unit': mix(surface, acc, dark ? 0.14 : 0.09), '--key': mix(surface, acc, dark ? 0.34 : 0.24),
-      '--err': err, '--err-soft': mix(surface, err, 0.16), '--ok': ok, '--ok-soft': mix(surface, ok, 0.15)
+      '--hlc': mix(surface, '#F2B705', dark ? 0.34 : 0.36), '--err': err, '--err-soft': mix(surface, err, 0.16), '--ok': ok, '--ok-soft': mix(surface, ok, 0.15)
     };
     const st = document.documentElement.style;
     for (const k in v) st.setProperty(k, v[k]);
@@ -293,6 +299,7 @@
     fill: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M16 12h.01M12 16h.01" stroke-width="2.6"/></svg>',
     bulb: '<svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
     paint: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.1 0-.8.7-1.5 1.5-1.5H17a4 4 0 0 0 4-4c0-4.9-4-8.8-9-8.8z"/><circle cx="7.5" cy="11" r="1.1"/><circle cx="10.5" cy="7" r="1.1"/><circle cx="15.5" cy="7.5" r="1.1"/></svg>',
+    marker: '<svg viewBox="0 0 24 24"><path d="m9 15-3 3H3l3-3"/><path d="m9 15 8.5-8.5a2.1 2.1 0 0 1 3 3L12 18z"/><path d="M6 21h14"/></svg>',
     chev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>'
   };
 
@@ -414,6 +421,10 @@
   // ================= Eingaben =================
   function pushHist() { G.hist.push({ v: G.values.slice(), n: G.notes.slice(), c: Object.assign({}, G.colors || {}) }); if (G.hist.length > 200) G.hist.shift(); }
   function input(d) {
+    if (ui.hlMode) {
+      ui.hl.has(d) ? ui.hl.delete(d) : ui.hl.add(d);
+      renderBoard(); renderPad(); return;
+    }
     const i = ui.sel;
     if (!G || G.won || i < 0 || G.puzzle[i]) return;
     if (ui.colorMode) {
@@ -598,12 +609,14 @@
 
   function renderBoard() {
     const H = highlights(), sel = ui.sel, selVal = sel >= 0 ? G.values[sel] : 0, quiet = !!ui.hint;
+    const hlOn = ui.hlMode && ui.hl.size > 0, hlMask = [...ui.hl].reduce((m, d) => m | bit(d), 0);
     $('board').innerHTML = cellsHTML({
       values: G.values, notes: G.notes, ghost: H.ghost, flash: ui.flash, interactive: true,
       given: i => !!G.puzzle[i], wrong: i => !G.puzzle[i] && G.values[i] !== G.solution[i],
       state: i => H.err.has(i) ? 'errhl' : i === sel ? 'sel' : H.key.has(i) ? 'key' : H.unit.has(i) ? 'unit'
+        : hlOn && !G.values[i] && (G.notes[i] & hlMask) ? 'hlc'
         : !quiet && selVal && G.values[i] === selVal ? 'same' : !quiet && sel >= 0 && S.SEES[sel][i] ? 'peer' : '',
-      noteCls: (i, d) => H.elim[i] && H.elim[i].has(d) ? 'nelim' : H.nkey[i] && H.nkey[i].has(d) ? 'nkey' : !quiet && selVal === d ? 'nhl' : '',
+      noteCls: (i, d) => H.elim[i] && H.elim[i].has(d) ? 'nelim' : H.nkey[i] && H.nkey[i].has(d) ? 'nkey' : hlOn && (hlMask & bit(d)) ? 'nmark' : !quiet && selVal === d ? 'nhl' : '',
       noteColor: (i, d) => H.color[i * 10 + d] || (G.colors && G.colors[i * 10 + d]) || null
     });
     ui.flash = -1;
@@ -802,6 +815,8 @@
         <div class="pick"><span style="font-weight:600">Hintergrund</span><button class="colorbtn" data-act="pickbg" aria-label="Hintergrund wählen" style="background:${cur.bg}"></button></div>
         <div class="pick"><span><b style="font-weight:600">Automatisch</b><small class="sub" style="display:block;font-size:13px">Hell oder dunkel wie dein Gerät</small></span><button class="btn" data-act="autocolor" ${settings ? '' : 'disabled'}>${settings ? 'Aktivieren' : 'Aktiv'}</button></div>
       </div><p class="sub" style="margin:8px 4px 0">Text- und Linienfarben passen sich automatisch an, damit alles lesbar bleibt.</p></section>
+      <section class="group"><h2>Darstellung</h2><div class="list" style="padding:14px 16px">${scaleSlider('scale-opt')}</div>
+        <p class="sub" style="margin:8px 4px 0">Vergrößert oder verkleinert die ganze App. Gilt nur für dieses Gerät. Im Spiel gibt es denselben Regler.</p></section>
       <section class="group"><h2>Färbe-Farben</h2><div class="list">
         <div class="paintlist">${BASE_COLORS.map(c => `<span class="swc" style="background:${c}" title="Grundfarbe"></span>`).join('')}
           ${customColors.map(c => `<button class="swc custom" data-act="delcustom" data-c="${c}" style="background:${c};color:${chipInk(c)}" aria-label="Eigene Farbe ${c} entfernen">×</button>`).join('')}
@@ -815,6 +830,7 @@
 
   // ---------- Spielbildschirm ----------
   function renderGameShell() {
+    if (!ui.keepHl) { ui.hlMode = false; ui.hl.clear(); }
     const lesson = G.mode === 'lesson';
     const title = lesson ? S.TECH[G.tech].name : G.mode === 'free' ? 'Trainingspuzzle' : LEVELS[G.level];
     $('app').className = 'app wide';
@@ -828,18 +844,19 @@
           <button class="tool" data-act="erase" aria-label="Löschen" title="Löschen (Entf)">${ICON.erase}</button>
           <button class="tool" data-act="notes" id="t-notes" aria-label="Notizmodus" title="Notizen (N)" aria-pressed="false">${ICON.pencil}</button>
           <button class="tool" data-act="color" id="t-color" aria-label="Kandidaten färben" title="Färben (F)" aria-pressed="false">${ICON.paint}</button>
+          <button class="tool" data-act="hlmode" id="t-hl" aria-label="Kandidaten markieren" title="Markieren (M)" aria-pressed="false">${ICON.marker}</button>
           <button class="tool" data-act="fill" aria-label="Alle Kandidaten eintragen" title="Alle Kandidaten eintragen">${ICON.fill}</button>
           <button class="tool" data-act="hint" aria-label="Tipp" title="Tipp (H)">${ICON.bulb}</button>
         </div>
         <div class="palette" id="palette" hidden></div>
         <div class="pad" id="pad"></div>
+        ${scaleSlider('scale-game')}
       </section>`;
     renderGame();
   }
   function renderGame() {
     if (ui.screen !== 'game' || !$('board')) return;
     renderBoard(); renderPad(); renderInfo(); renderCoach(); renderOverlay();
-    $('game').classList.toggle('side', !$('coach').hidden);
   }
   function renderInfo() {
     const parts = [`Fehler <b>${G.mistakes}</b>`];
@@ -853,13 +870,16 @@
     let html = '';
     for (let d = 1; d <= 9; d++) {
       const left = 9 - count[d];
-      html += `<button class="num${left === 0 ? ' done' : ''}" data-d="${d}" aria-label="Ziffer ${d}, noch ${left}"><b>${d}</b><small>${left || ''}</small></button>`;
+      const on = ui.hlMode && ui.hl.has(d);
+      html += `<button class="num${left === 0 ? ' done' : ''}" data-d="${d}" ${ui.hlMode ? `aria-pressed="${on}"` : ''} aria-label="Ziffer ${d}, noch ${left}"><b>${d}</b><small>${left || ''}</small></button>`;
     }
     $('pad').innerHTML = html;
     $('pad').classList.toggle('notesmode', ui.notesMode);
     $('t-notes').setAttribute('aria-pressed', ui.notesMode);
     $('t-color').setAttribute('aria-pressed', ui.colorMode);
     $('pad').classList.toggle('colormode', ui.colorMode);
+    $('pad').classList.toggle('hlmode', ui.hlMode);
+    $('t-hl').setAttribute('aria-pressed', ui.hlMode);
     $('pad').style.setProperty('--paint', ui.color);
     renderPalette();
   }
@@ -961,10 +981,23 @@
       <div class="pickrow"><span class="pickprev" id="pick-prev" style="background:${p.value}"></span><input type="text" id="pick-hex" value="${p.value}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Farbcode"></div>
       <div class="row"><button class="btn primary" data-act="pickok">Übernehmen</button><button class="btn" data-act="pickcancel">Abbrechen</button></div></div>`;
   }
+  function renderWelcome(m) {
+    m.hidden = false;
+    m.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="wl-t">
+      <h3 id="wl-t">Willkommen bei Master Sudoku</h3>
+      <p class="sub" style="margin:0">Mit einem Konto werden Punkte, Statistik, Trainingsstand, Farben und dein laufendes Spiel zwischen deinen Geräten abgeglichen. Ohne Konto spielst du offline, und alles bleibt auf diesem Gerät.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn primary block" data-act="welcomelogin">Anmelden oder registrieren</button>
+        <button class="btn block" data-act="welcomeoffline">Offline spielen</button>
+      </div>
+      <label class="check"><input type="checkbox" id="wl-never"> Nicht mehr anzeigen</label>
+      <p class="sub" style="margin:0;font-size:13px">Du kannst dich später jederzeit im Hauptmenü unter „Konto &amp; Synchronisation“ anmelden.</p></div>`;
+  }
   function renderModal() {
     const m = $('modal');
     if (ui.busy) return;
     if (ui.picker) return renderPicker(m);
+    if (ui.welcome) return renderWelcome(m);
     if (!ui.modal) { m.hidden = true; m.innerHTML = ''; return; }
     const d = ui.modal;
     m.hidden = false;
@@ -973,7 +1006,7 @@
   }
 
   function render() {
-    applyTheme();
+    applyTheme(); applyScale();
     if (ui.screen === 'game' && !G) ui.screen = 'menu';
     ({ menu: renderMenu, level: renderLevel, training: renderTraining, detail: renderDetail, stats: renderStats, options: renderOptions, account: renderAccount, game: renderGameShell })[ui.screen]();
     renderModal();
@@ -987,9 +1020,15 @@
     switch (a) {
       case 'undo': return undo();
       case 'erase': return erase();
-      case 'notes': ui.notesMode = !ui.notesMode; if (!ui.notesMode) ui.colorMode = false; return renderPad();
-      case 'color': ui.colorMode = !ui.colorMode; if (ui.colorMode) ui.notesMode = true; return renderPad();
+      case 'notes': ui.notesMode = !ui.notesMode; if (!ui.notesMode) ui.colorMode = false; if (ui.notesMode) ui.hlMode = false; return renderBoard(), renderPad();
+      case 'hlmode': ui.hlMode = !ui.hlMode; ui.hl.clear(); if (ui.hlMode) { ui.colorMode = false; ui.notesMode = false; } return renderBoard(), renderPad();
+      case 'color': ui.colorMode = !ui.colorMode; if (ui.colorMode) { ui.notesMode = true; ui.hlMode = false; } return renderBoard(), renderPad();
       case 'clearcolors': return clearColors();
+      case 'welcomelogin': case 'welcomeoffline': {
+        const nv = $('wl-never'); if (nv && nv.checked) store.set('ss-noprompt', true);
+        ui.welcome = false; renderModal();
+        return a === 'welcomelogin' ? go('account') : undefined;
+      }
       case 'acclogin': return accountAction(() => SYNC.signIn(val('acc-email'), val('acc-pw')));
       case 'accregister':
         if (val('acc-pw') !== val('acc-pw2')) { ui.accMsg = { type: 'err', text: 'Die beiden Passwörter stimmen nicht überein.' }; return renderAccount(); }
@@ -1078,6 +1117,11 @@
   });
 
   document.addEventListener('input', e => {
+    if (e.target.id === 'scale-game' || e.target.id === 'scale-opt') {
+      scale = +e.target.value; store.set('ss-scale', scale);
+      const o = $(e.target.id + '-out'); if (o) o.textContent = scale + ' %';
+      applyScale(); return;
+    }
     if (e.target.id !== 'pick-hex' || !ui.picker) return;
     let v = e.target.value.trim().toUpperCase();
     if (v && v[0] !== '#') v = '#' + v;
@@ -1089,12 +1133,13 @@
     }
     if (ui.picker && e.key === 'Escape') { ui.picker = null; return renderModal(); }
     if (ui.modal && e.key === 'Escape') { ui.modal = null; return renderModal(); }
-    if (ui.screen !== 'game' || !G || e.metaKey || e.ctrlKey || e.altKey || ui.modal || ui.picker || ui.busy) return;
+    if (ui.screen !== 'game' || !G || e.metaKey || e.ctrlKey || e.altKey || ui.modal || ui.picker || ui.welcome || ui.busy) return;
     if (e.target && e.target.tagName === 'INPUT') return;
     const k = e.key;
     if (/^[1-9]$/.test(k)) { input(+k); e.preventDefault(); return; }
     if (k === 'Backspace' || k === 'Delete' || k === '0') { erase(); e.preventDefault(); return; }
     if (k === 'n' || k === 'N') { ui.notesMode = !ui.notesMode; if (!ui.notesMode) ui.colorMode = false; return renderPad(); }
+    if (k === 'm' || k === 'M') return act('hlmode');
     if (k === 'f' || k === 'F') { ui.colorMode = !ui.colorMode; if (ui.colorMode) ui.notesMode = true; return renderPad(); }
     if (k === 'h' || k === 'H') return hint();
     if (k === 'z' || k === 'Z') return undo();
@@ -1119,6 +1164,7 @@
   function onBack() {
     if (ui.busy) { ui.genToken++; return hideBusy(); }
     if (ui.picker) { ui.picker = null; return renderModal(); }
+    if (ui.welcome) { ui.welcome = false; return renderModal(); }
     if (ui.modal) { ui.modal = null; return renderModal(); }
     if (ui.screen === 'game' && ui.hint) { ui.hint = null; return renderGame(); }
     if (ui.screen !== 'menu') return go(backTarget());
@@ -1132,7 +1178,12 @@
     SYNC.init({
       getLocal: localForSync,
       applyRemote,
-      onState: () => {
+      onState: st => {
+        // Beim Start einmal fragen, solange niemand angemeldet ist
+        if (st.ready && !ui.welcomeChecked) {
+          ui.welcomeChecked = true;
+          if (st.available && !st.user && !store.get('ss-noprompt')) { ui.welcome = true; renderModal(); }
+        }
         if (ui.screen === 'account' && !ui.accBusy) renderAccount();
         else if (ui.screen === 'menu' && !ui.busy) renderMenu();
       }

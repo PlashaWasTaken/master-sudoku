@@ -77,7 +77,7 @@ if (cfg) {
 }
 
 const hooks = { getLocal: null, applyRemote: null, onState: null };
-const state = { available: !!auth, googleAvailable: false, user: null, status: auth ? 'signedout' : 'unavailable', lastSync: 0, error: '' };
+const state = { ready: !auth, available: !!auth, googleAvailable: false, user: null, status: auth ? 'signedout' : 'unavailable', lastSync: 0, error: '' };
 state.googleAvailable = !!auth && (isAndroid ? Capacitor.isPluginAvailable('FirebaseAuthentication') : isTauri ? !!window.GOOGLE_WEB_CLIENT_ID : true);
 
 let unsub = null, remote = null, pushTimer = null, gotFirstSnapshot = false;
@@ -111,6 +111,7 @@ function startListening() {
 }
 
 function handleUser(u) {
+  state.ready = true;
   state.user = describeUser(u);
   if (!u) { stopListening(); state.status = 'signedout'; emit(); return; }
   if (!state.user.verified) { stopListening(); state.status = 'unverified'; emit(); return; }

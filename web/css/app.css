@@ -2,20 +2,20 @@
 /* Ruhig & minimal: eine Spalte, viel Luft, Farbe nur als Akzent. Alle Farben werden zur Laufzeit aus Hintergrund + Akzent abgeleitet. */
 :root {
   --bg: #F4F5F7; --surface: #FBFBFC; --ink: #1C1F27; --muted: #6B7080; --hair: #DDE0E6; --line: #4A4F5C;
-  --accent: #3B5BDB; --accent-ink: #FFFFFF; --sel: #B9C6F4; --peer: #EEF0F3; --rowcol: #EEF1FC; --same: #DCE3F9; --unit: #E6EBFB; --key: #C2CEF5;
+  --accent: #3B5BDB; --accent-ink: #FFFFFF; --sel: #B9C6F4; --peer: #EEF0F3; --rowcol: #EEF1FC; --same: #DCE3F9; --unit: #E6EBFB; --key: #C2CEF5; --hlc: #FBE7A8;
   --err: #C93636; --err-soft: #F7DEDE; --ok: #23845A; --ok-soft: #DCEFE5;
   --f: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #14161B; --surface: #1B1E25; --ink: #ECEEF2; --muted: #9298A8; --hair: #2E323C; --line: #A5ABB9;
-    --accent: #7AA2FF; --accent-ink: #10131A; --sel: #3A4C80; --peer: #22262F; --rowcol: #1F2638; --same: #2B3756; --unit: #252D44; --key: #354775;
+    --accent: #7AA2FF; --accent-ink: #10131A; --sel: #3A4C80; --peer: #22262F; --rowcol: #1F2638; --same: #2B3756; --unit: #252D44; --key: #354775; --hlc: #5A4A17;
     --err: #FF7A7A; --err-soft: #3A2226; --ok: #5BCB93; --ok-soft: #1D3529; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #14161B; --surface: #1B1E25; --ink: #ECEEF2; --muted: #9298A8; --hair: #2E323C; --line: #A5ABB9;
-  --accent: #7AA2FF; --accent-ink: #10131A; --sel: #3A4C80; --peer: #22262F; --rowcol: #1F2638; --same: #2B3756; --unit: #252D44; --key: #354775;
+  --accent: #7AA2FF; --accent-ink: #10131A; --sel: #3A4C80; --peer: #22262F; --rowcol: #1F2638; --same: #2B3756; --unit: #252D44; --key: #354775; --hlc: #5A4A17;
   --err: #FF7A7A; --err-soft: #3A2226; --ok: #5BCB93; --ok-soft: #1D3529; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -70,11 +70,7 @@ button.item:hover { background: var(--peer); }
 .dots i.on { background: var(--accent); }
 
 /* Spiel */
-.game { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "board" "coach" "tools" "palette" "pad"; }
-@media (min-width: 900px) {
-  .game.side { max-width: none; grid-template-columns: minmax(0, 500px) minmax(0, 340px); justify-content: center; column-gap: 32px; grid-template-rows: auto auto auto auto 1fr; grid-template-areas: "info coach" "board coach" "tools coach" "palette coach" "pad coach"; align-items: start; }
-  .game.side .coach { position: sticky; top: 16px; }
-}
+.game { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "board" "coach" "tools" "palette" "pad" "scale"; }
 .info { grid-area: info; display: flex; justify-content: center; gap: 22px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .info b { color: var(--ink); font-weight: 600; }
 .boardwrap { grid-area: board; position: relative; container-type: inline-size; }
@@ -220,3 +216,31 @@ input[type="email"], input[type="password"], input[type="text"] { width: 100%; p
 .pc[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
 .pickrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; }
 .pickprev { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--hair); display: block; }
+
+/* Markier-Modus: Felder mit den gewählten Kandidaten hervorheben */
+.cell.hlc { background: var(--hlc); }
+.notes span.nmark { color: var(--ink); font-weight: 900; }
+.num[aria-pressed="true"] { background: var(--hlc) !important; }
+.pad.hlmode .num b { color: var(--ink); }
+/* Größenregler */
+.scale { grid-area: scale; display: grid; grid-template-columns: auto minmax(0, 1fr) 3.2em; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.scale input[type="range"] { width: 100%; accent-color: var(--accent); }
+.scale output { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); font-weight: 600; }
+.pick .scale { min-width: 0; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+@media (min-width: 900px) {
+  /* Desktop: Spielfeld links, rechts Werkzeuge, Ziffernblock als 3×3, Größe und Tipps */
+  .game { max-width: none; grid-template-columns: minmax(0, 560px) minmax(0, 300px); justify-content: center; column-gap: 36px; row-gap: 14px;
+    grid-template-rows: auto auto auto auto auto 1fr; grid-template-areas: "info tools" "board palette" "board pad" "board scale" "board coach" "board ."; align-items: start; }
+  .boardwrap { align-self: start; }
+  .pad { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pad .num { aspect-ratio: 1.15; justify-content: center; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; }
+  .pad .num:hover { background: var(--peer); }
+  .pad .num b { font-size: 34px; }
+  .pad .num small { font-size: 12px; }
+  .pad.notesmode .num b { font-size: 24px; }
+  .tools { justify-content: space-between; }
+  .tool { width: 44px; }
+}
